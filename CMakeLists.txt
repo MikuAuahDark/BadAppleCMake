@@ -80,11 +80,13 @@ if (PRINTER_MODE)
 	math(EXPR WIDTH_BYTE_M1 "${WIDTH_BYTE} - 1")
 	math(EXPR HEIGHT_ITER "${HEIGHT} - 1")
 	math(EXPR HEIGHT_TERM "${HEIGHT} / 4 + 2")
+	string(LENGTH ${WIDTH} WIDTHSTR_LEN)
+	string(LENGTH ${HEIGHT} HEIGHTSTR_LEN)
 	string(ASCII 27 ESC)
+	math(EXPR READ_OFFSET "${WIDTHSTR_LEN} + ${HEIGHTSTR_LEN} + 5")
 
 	foreach (i RANGE 1 ${NFRAMES})
-		# Adjust offset if WIDTH and HEIGHT is not exactly 3 characters each
-		file(READ "${FRAMES_PATH}/${i}.pbm" FRAME_DATA OFFSET 11 HEX)
+		file(READ "${FRAMES_PATH}/${i}.pbm" FRAME_DATA OFFSET ${READ_OFFSET} HEX)
 
 		# Show current video time
 		math(EXPR TIME_SECONDS "${i} / 30")
@@ -185,6 +187,7 @@ add_custom_command(OUTPUT ${FILES_TO_GENERATE}
 # The actual target to run
 add_custom_target(BadApple ALL
 	COMMAND ${CMAKE_COMMAND} "-B${CMAKE_CURRENT_BINARY_DIR}/printer" "-H${CMAKE_CURRENT_SOURCE_DIR}" "-G${CMAKE_GENERATOR}" "-DPRINTER_MODE=1" "-DFRAMES_PATH=${FRAMES_PATH}"
+	COMMENT "Starting Bad Apple"
 	DEPENDS ${FILES_TO_GENERATE}
 	USES_TERMINAL
 )
