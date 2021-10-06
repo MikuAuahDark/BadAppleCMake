@@ -137,26 +137,43 @@ function(severity_printer TEXT RESULT)
 	endif ()
 endfunction()
 
+function(find_ytdl PROGNAME RESULT RESULT_CMDLINE)
+	find_program(PROGRAM_PATH ${PROGNAME})
+
+	if (PROGRAM_PATH)
+		set(${RESULT} ${PROGRAM_PATH} PARENT_SCOPE)
+		set(${RESULT_CMDLINE} "" PARENT_SCOPE)
+	else ()
+		find_package(Python3 COMPONENTS Interpreter)
+
+		if (Python3_Interpreter_FOUND)
+			string(REPLACE "-" "_" PROGRAM_MODULE ${PROGNAME})
+
+			execute_process(COMMAND ${Python3_EXECUTABLE} "-c" "import ${PROGRAM_MODULE}"
+				RESULT_VARIABLE ERRORLEVEL
+			)
+			if (${ERRORLEVEL} STREQUAL "0")
+				set(${RESULT} ${Python3_EXECUTABLE} PARENT_SCOPE)
+				set(${RESULT_CMDLINE} -m ${PROGRAM_MODULE} PARENT_SCOPE)
+			else ()
+				set(${RESULT} ${PROGNAME}-NOTFOUND PARENT_SCOPE)
+				set(${RESULT_CMDLINE} "" PARENT_SCOPE)
+			endif ()
+		else ()
+			set(${RESULT} ${PROGNAME}-NOTFOUND PARENT_SCOPE)
+			set(${RESULT_CMDLINE} "" PARENT_SCOPE)
+		endif ()
+	endif ()
+endfunction()
+
 # Look for FFmpeg
 find_program(FFMPEG ffmpeg)
 severity_printer("FFmpeg" ${FFMPEG})
 
 # Look for youtube-dl
-find_program(YOUTUBE_DL youtube-dl)
-set(YOUTUBE_DL_ARGS)
-
+find_ytdl("yt-dlp" YOUTUBE_DL YOUTUBE_DL_ARGS)
 if (NOT YOUTUBE_DL)
-	find_package(Python3 COMPONENTS Interpreter)
-
-	if (Python3_Interpreter_FOUND)
-		execute_process(COMMAND ${Python3_EXECUTABLE} "-c" "import youtube_dl"
-			RESULT_VARIABLE ERRORLEVEL
-		)
-		if (${ERRORLEVEL} STREQUAL "0")
-			set(YOUTUBE_DL ${Python3_EXECUTABLE})
-			set(YOUTUBE_DL_ARGS -m youtube_dl)
-		endif ()
-	endif()
+	find_ytdl("youtube-dl" YOUTUBE_DL YOUTUBE_DL_ARGS)
 endif ()
 
 severity_printer("youtube-dl" ${YOUTUBE_DL})
