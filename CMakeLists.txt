@@ -7,15 +7,24 @@ if (POLICY CMP0053)
 	cmake_policy(SET CMP0053 NEW)
 endif ()
 
-# Hardcoded number of frames, should match with AV1 version of the video
-set(NFRAMES 6572)
+# Assert. Just please obey!
+execute_process(COMMAND "cmd" "/c" "chcp"
+	OUTPUT_VARIABLE CODEPAGE
+)
+string(REGEX MATCH "([0-9]+)" CODEPAGE_NUM "${CODEPAGE}")
+if (NOT ${CODEPAGE_NUM} STREQUAL "65001")
+	message(FATAL_ERROR "Windows 10 with UTF-8 mode is required. Do not attempt to remove this assert!")
+endif ()
 
-# Dimensions must be 4:3 ration where the width is divisible by 2
+# Hardcoded number of frames, should match with WebM version of the video
+set(NFRAMES 3777)
+
+# Dimensions must be 16:9 ration where the width is divisible by 2
 # and the height is divisible by 4
 # Also you need to ensure the height fits in the terminal or ANSI escape codes
 # won't work properly
 # Furthermore, adjust the read offset below if WIDTH and/or HEIGHT is not exactly 3 characters
-set(WIDTH 192)
+set(WIDTH 256)
 set(HEIGHT 144)
 
 if (PRINTER_MODE)
@@ -89,7 +98,7 @@ if (PRINTER_MODE)
 		file(READ "${FRAMES_PATH}/${i}.pbm" FRAME_DATA OFFSET ${READ_OFFSET} HEX)
 
 		# Show current video time
-		math(EXPR TIME_SECONDS "${i} / 30")
+		math(EXPR TIME_SECONDS "${i} / 15")
 		math(EXPR TIME_MINUTES "${TIME_SECONDS} / 60")
 		math(EXPR TIME_SECONDS "${TIME_SECONDS} % 60")
 		zeropad2(TIME_SECONDS ${TIME_SECONDS})
@@ -179,9 +188,9 @@ endif ()
 severity_printer("youtube-dl" ${YOUTUBE_DL})
 
 # Download video
-add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/bad_apple"
-	COMMAND "${YOUTUBE_DL}" ARGS ${YOUTUBE_DL_ARGS} -f "243" -o "${CMAKE_CURRENT_BINARY_DIR}/bad_apple" https://youtu.be/FtutLA63Cp8
-	COMMENT "Downloading Bad Apple"
+add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/ラグトレイン"
+	COMMAND "${YOUTUBE_DL}" ARGS ${YOUTUBE_DL_ARGS} -f "248" -o "${CMAKE_CURRENT_BINARY_DIR}/ラグトレイン" UnIhRpIT7nc
+	COMMENT "Downloading ラグトレイン"
 	USES_TERMINAL
 )
 
@@ -194,9 +203,9 @@ foreach (i RANGE 1 ${NFRAMES})
 endforeach ()
 
 add_custom_command(OUTPUT ${FILES_TO_GENERATE}
-	COMMAND "${FFMPEG}" -hide_banner -y -i "${CMAKE_CURRENT_BINARY_DIR}/bad_apple" -filter:v scale=${WIDTH}x${HEIGHT},format=monob "${FRAMES_PATH}/%d.pbm"
+	COMMAND "${FFMPEG}" -hide_banner -y -i "${CMAKE_CURRENT_BINARY_DIR}/ラグトレイン" -filter:v scale=${WIDTH}x${HEIGHT},format=monob "${FRAMES_PATH}/%d.pbm"
 	COMMENT "Coverting videos to PBM"
-	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/bad_apple"
+	DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/ラグトレイン"
 	VERBATIM
 	USES_TERMINAL
 )
@@ -204,7 +213,7 @@ add_custom_command(OUTPUT ${FILES_TO_GENERATE}
 # The actual target to run
 add_custom_target(BadApple ALL
 	COMMAND ${CMAKE_COMMAND} "-B${CMAKE_CURRENT_BINARY_DIR}/printer" "-H${CMAKE_CURRENT_SOURCE_DIR}" "-G${CMAKE_GENERATOR}" "-DPRINTER_MODE=1" "-DFRAMES_PATH=${FRAMES_PATH}"
-	COMMENT "Starting Bad Apple"
+	COMMENT "Starting ラグトレイン"
 	DEPENDS ${FILES_TO_GENERATE}
 	USES_TERMINAL
 )
